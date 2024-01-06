@@ -1,0 +1,21 @@
+version: '3.3'
+services:
+  app:
+    build:
+      context: .
+    container_name: reproduction
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongo
+    environment:
+      - MONGODB_URI=mongodb://mongoadmin:secret@mongo:27017/jsonschemadiscovery?authSource=admin
+      - SECRET_TOKEN=talkischeapshowmethecode
+  mongo:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
