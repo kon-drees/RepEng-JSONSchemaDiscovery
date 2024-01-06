@@ -66,7 +66,21 @@ RUN git apply /home/repro/git-repos/JSONSchemaDiscovery/json-discovery.patch
 COPY patches/requirements.txt /home/repro/git-repos/JSONSchemaDiscovery/
 RUN python3 -m pip install --user -r /home/repro/git-repos/JSONSchemaDiscovery/requirements.txt
 
+# Copy the smoke.sh script and the data into the JSONSchemaDiscovery/reproduceabiliy directory
+COPY scripts/smoke.sh /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/
+COPY data/firenze_venues.json /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/
 
+# Make sure the script is executable
+USER root
+RUN chmod +x /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/smoke.sh
+USER repro
+
+
+# Set the WORKDIR to the reproduction directory
+WORKDIR /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy
+
+# To run smoke.sh, you  need to manually execute it after the container has started with the following command:
+# docker exec -it reproduction /reproduceabiliy/smoke.sh
 
 
 
