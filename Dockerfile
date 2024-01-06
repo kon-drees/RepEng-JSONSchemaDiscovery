@@ -58,6 +58,15 @@ RUN npm install
 RUN npm run predev
 
 
+# Apply the patches from the patches directory
+COPY patches/json-discovery.patch /home/repro/git-repos/JSONSchemaDiscovery/
+RUN git apply /home/repro/git-repos/JSONSchemaDiscovery/json-discovery.patch
+
+# Install Python requirements
+COPY patches/requirements.txt /home/repro/git-repos/JSONSchemaDiscovery/
+RUN python3 -m pip install --user -r /home/repro/git-repos/JSONSchemaDiscovery/requirements.txt
+
+
 
 
 

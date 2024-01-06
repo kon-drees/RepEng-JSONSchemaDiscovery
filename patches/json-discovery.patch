@@ -1,0 +1,159 @@
+diff --git a/reproduceabiliy/api_tester.py b/reproduceabiliy/api_tester.py
+new file mode 100644
+index 0000000..83b2a60
+--- /dev/null
++++ b/reproduceabiliy/api_tester.py
+@@ -0,0 +1,109 @@
++import json
++import requests
++from requests import Timeout
++
++BASE_URL = 'http://localhost:3000/api/'
++
++
++
++# Function to register a new user
++def register_user(username, email, password):
++    url = f'{BASE_URL}/register'
++    data = {
++        'username': username,
++        'email': email,
++        'password': password
++    }
++    response = requests.post(url, json=data)
++    return response.json()
++
++# Function to log in a user
++def login_user(email, password):
++    url = f'{BASE_URL}/login'
++    data = {
++        'email': email,
++        'password': password
++    }
++    response = requests.post(url, json=data)
++    return response.json()
++
++# Function to get user data (requires authentication)
++def get_user(token):
++    url = f'{BASE_URL}/user'
++    headers = {
++        'Authorization': f'Bearer {token}'
++    }
++    response = requests.get(url, headers=headers)
++    return response.json()
++
++
++# Add the perform_extraction function
++def perform_extraction(user_id, token, max_retries=3):
++  url = f'{BASE_URL}batch/rawschema/steps/all'
++  data = {
++    'authentication': {
++      'authMechanism': 'SCRAM-SHA-1',
++      'authDatabase': 'admin',
++      'userName': 'mongoadmin',
++      'password': 'secret'
++    },
++    'port': '27017',
++    'address': 'mongo',
++    'databaseName': 'venue_db',
++    'collectionName': 'venues',
++    'userId': user_id
++  }
++  headers = {
++    'Authorization': f'Bearer {token}'
++  }
++  for attempt in range(max_retries):
++    try:
++      response = requests.post(url, json=data, headers=headers, timeout=70)
++      return response.json()
++    except Timeout:
++      print(f"Attempt {attempt + 1} timed out. Retrying...")
++
++  raise Exception("All retry attempts failed.")
++
++
++def get_batch_details(batch_id, token):
++    url = f'{BASE_URL}batch/{batch_id}'
++    headers = {
++        'Authorization': f'Bearer {token}'
++    }
++    response = requests.get(url, headers=headers)
++    return response.json()
++
++
++if __name__ == "__main__":
++    registration_response = register_user('testuser123','testuser123@example.com', 'password123')
++    user_id = registration_response.get('_id')
++    print("Registration Response:", registration_response)
++    if user_id:
++        register_user('testuser123', 'testuser123@example.com', 'password123')
++
++    login_response = login_user('testuser123@example.com', 'password123')
++    print("Login Response:", login_response)
++    token = login_response.get('token')
++    if token:
++        user_data = get_user(token)
++        print("User Data:", user_data)
++        extraction_response = perform_extraction(user_id, token)
++        print("Extraction Response:", extraction_response)
++        batch_id = extraction_response.get('batchId')
++        if batch_id:
++            batch_details = get_batch_details(batch_id, token)
++            with open("batch_details.json", "w") as f:
++              f.write(json.dumps(batch_details))
++            print("Batch Details:", batch_details)
++
++        else:
++            print("No batch ID found in extraction response.")
++    else:
++        print("Failed to obtain a token during login.")
++
++
++
++
++
++
+diff --git a/reproduceabiliy/data_importer.py b/reproduceabiliy/data_importer.py
+new file mode 100644
+index 0000000..79560f9
+--- /dev/null
++++ b/reproduceabiliy/data_importer.py
+@@ -0,0 +1,38 @@
++import json
++from pymongo import MongoClient
++from pymongo.errors import DuplicateKeyError
++
++host = "mongo"
++port = 27017
++username = "mongoadmin"
++password = "secret"
++
++
++auth_source = "admin"
++
++db_name = "venue_db"
++collection_name = "venues"
++json_file_path = "firenze_venues.json"
++
++client = MongoClient(host, port, username=username, password=password, authSource=auth_source)
++
++db = client[db_name]
++collection = db[collection_name]
++
++with open(json_file_path, "r") as json_file:
++    for line in json_file:
++        try:
++            data = json.loads(line.strip())
++
++            # Insert the JSON data into the collection
++            collection.insert_one(data)
++        except json.JSONDecodeError as e:
++            print(f"Error parsing JSON: {e}")
++        except DuplicateKeyError:
++            print("Data already imported")
++            break
++        except Exception as e:
++            print(f"Error inserting data: {e}")
++
++print("Data imported successfully.")
++
