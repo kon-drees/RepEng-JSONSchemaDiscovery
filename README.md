@@ -24,6 +24,10 @@ The project consists of two containers: one for the project itself and another f
 
 ## Performing the smoke test:
 
+The smoke test is performed inside the container.
+It loads data in the MongoDB container and runs the Schema Discovery tool on the data. The smoke test is successful if the tool runs without errors.
+
+
 1. After the containers are up and running, open a new terminal and run the following command to access the container:
     ```bash
    docker exec -it reproduction /bin/bash
