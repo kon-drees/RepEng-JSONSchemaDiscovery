@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     git \
     file \
+    make \
     nano \
     python3 \
     python3-pip \
@@ -69,11 +70,16 @@ RUN python3 -m pip install --user -r /home/repro/git-repos/JSONSchemaDiscovery/r
 # Copy the smoke.sh script and the data into the JSONSchemaDiscovery/reproduceabiliy directory
 COPY scripts/smoke.sh /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/
 COPY data/firenze_venues.json /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/
-
-# Make sure the script is executable
 USER root
 RUN chmod +x /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy/smoke.sh
 USER repro
+
+
+# Clone and build the RepEng-Reproduceability-Paper
+WORKDIR /home/repro/git-repos
+RUN git clone https://github.com/kon-drees/RepEng-Reproduceability-Paper.git
+WORKDIR /home/repro/git-repos/RepEng-Reproduceability-Paper
+RUN make report
 
 
 # Set the WORKDIR to the reproduction directory
@@ -82,6 +88,13 @@ WORKDIR /home/repro/git-repos/JSONSchemaDiscovery/reproduceabiliy
 # To run smoke.sh, you  need to manually execute it after the container has started with the following command:
 # docker exec -it reproduction /reproduceabiliy/smoke.sh
 
+# To build the RepEng-Reproduceability-Paper, you need to manually execute the following command:
+# docker exec -it reproduction /bin/bash -c "cd /home/repro/git-repos/RepEng-Reproduceability-Paper && make report"
+# To clean the RepEng-Reproduceability-Paper, you need to manually execute the following command:
+# docker exec -it reproduction /bin/bash -c "cd /home/repro/git-repos/RepEng-Reproduceability-Paper && make clean"
+
+# to enter the container and report directory, you need to manually execute the following command:
+# docker exec -it reproduction /bin/bash -c "cd /home/repro/git-repos/RepEng-Reproduceability-Paper && /bin/bash"
 
 
 CMD ["npm", "run", "dev"]
